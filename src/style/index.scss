@@ -1,0 +1,9 @@
+// 通用基础样式
+@import "base";
+@import "scrollbar";
+// ui样式
+@import "~vant/lib/index.css";
+// 手机端重置样式和1px边框样式
+@import "./border.scss";
+@import "./reset.scss";
+
