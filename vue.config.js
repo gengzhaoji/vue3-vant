@@ -39,19 +39,11 @@ module.exports = {
     modules: false
   },
   chainWebpack: c => {
-    //最小化代码
-    c.optimization.minimize(true);
-    //分割代码
-    c.optimization.splitChunks({
-      chunks: 'all'
-    });
     c.resolve.alias
       .set('@', resolve('src'))
       .set('@api', resolve('src/api'))
       .set('@com', resolve('src/components'))
       .set('@utils', resolve('src/utils'))
-    c.plugins.delete('preload');
-    c.plugins.delete('prefetch');
     // 开启js、css压缩
     if (isProduction) {
       c.plugin('compressionPlugin')
