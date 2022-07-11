@@ -1,66 +1,63 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
-import guarder from '../helper/guarder'
+import { createWebHistory, createRouter } from 'vue-router';
+import Layout from '@/extension/layout/index.vue';
+// 路由守卫
+import guarder from '@/helper/guarder.js';
 
-const routes = [
-  {
-    path: "/login",
-    name: "login",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/login')
-  },
-  {
-    path: "",
-    name: "index",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/index')
-  },
-  {
-    path: "/vehicle/information",
-    name: "information",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/vehicle/information')
-  },
-  {
-    path: "/vehicle/archives",
-    name: "archives",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/vehicle/archives')
-  },
-  {
-    path: "/people/information",
-    name: "people_information",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views//people/information')
-  },
-  {
-    path: "/people/collection",
-    name: "people_collection",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/people/collection')
-  },
-  {
-    path: "/people/archives",
-    name: "people_archives",
-    meta: {},
-    redirect: "",
-    component: () => import('@/views/people/archives')
-  }
-]
+// 公共路由
+export const constantRoutes = [
+    {
+        path: '/',
+        name: '/',
+        component: Layout,
+        children: [
+            {
+                path: '',
+                name: 'index',
+                meta: { title: '首页' },
+                component: () => import('@/views/index.vue'),
+            },
+            {
+                path: 'vehicle/information',
+                name: 'information',
+                meta: { title: '车辆信息' },
+                component: () => import('@/views/vehicle/information.vue'),
+            },
+            {
+                path: 'vehicle/archives',
+                name: 'archives',
+                meta: { title: '车辆信息' },
+                component: () => import('@/views/vehicle/archives.vue'),
+            },
+            {
+                path: 'people/information',
+                name: 'people_information',
+                meta: { title: '人员信息' },
+                component: () => import('@/views//people/information.vue'),
+            },
+            {
+                path: 'people/collection',
+                name: 'people_collection',
+                meta: { title: '人员采集' },
+                component: () => import('@/views/people/collection.vue'),
+            },
+            {
+                path: 'people/archives',
+                name: 'people_archives',
+                meta: { title: '人员档案' },
+                component: () => import('@/views/people/archives.vue'),
+            },
+        ],
+    },
+    {
+        path: '/login',
+        name: '/login',
+        component: () => import('../extension/login/login.vue'),
+        meta: { title: '登陆页面' },
+    },
+];
 
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes
-})
+const router = createRouter({ history: createWebHistory(), routes: constantRoutes });
 
-/**
- * 注入路由守卫
- */
-guarder(router)
+guarder(router);
 
-export default router
+export default router;

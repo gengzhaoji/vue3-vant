@@ -1,19 +1,9 @@
-const _isEqual = require('lodash/isEqual')
-
 /**
  * 常用辅助函数
  * @module utils/util
  */
 
-/**
- * 判断两个对象是否相等
- * @param {*} object
- * @param {*} other
- * @return {boolean}
- */
-export function isEqual(object, other) {
-  return _isEqual(object, other)
-}
+import { clone } from './convert';
 
 /**
  * 防抖函数
@@ -24,31 +14,28 @@ export function isEqual(object, other) {
  * @returns {Function} 事件处理函数
  */
 export function debounce(fn, delay = 20, isImmediate = false, context = this) {
-  // 使用闭包，保存执行状态，控制函数调用顺序
-  let timer;
-  
-  return function () {
-    const _args = [].slice.call(arguments)
-    
-    clearTimeout(timer);
-    
-    const _fn = function () {
-      timer = null;
-      if (!isImmediate) fn.apply(context, _args);
+    // 使用闭包，保存执行状态，控制函数调用顺序
+    let timer;
+    return function () {
+        const _args = [].slice.call(arguments);
+        clearTimeout(timer);
+        const _fn = function () {
+            timer = null;
+            if (!isImmediate) fn.apply(context, _args);
+        };
+        // 是否滚动时立刻执行
+        const callNow = !timer && isImmediate;
+        timer = setTimeout(_fn, delay);
+        if (callNow) fn.apply(context, _args);
     };
-    
-    // 是否滚动时立刻执行
-    const callNow = !timer && isImmediate;
-    
-    timer = setTimeout(_fn, delay);
-    
-    if (callNow) fn.apply(context, _args);
-  }
 }
 
-const raFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || function (callback) {
-  return window.setTimeout(callback, 1000 / 60);
-};
+const raFrame =
+    window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    function (callback) {
+        return window.setTimeout(callback, 1000 / 60);
+    };
 
 /**
  * 动画延时函数
@@ -56,139 +43,155 @@ const raFrame = window.requestAnimationFrame || window.webkitRequestAnimationFra
  * @param {function} callback 动画回调函数
  * @return {number} id
  */
-export const requestAnimationFrame = raFrame
+export const requestAnimationFrame = raFrame;
 
 /**
  * 清除动画延时
  * @function
  * @param {number} id
  */
-export const cancelAnimationFrame = window.cancelAnimationFrame || window.webkitRequestAnimationFrame || function (id) {
-  window.clearTimeout(id);
-};
+export const cancelAnimationFrame =
+    window.cancelAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    function (id) {
+        window.clearTimeout(id);
+    };
 
 /**
- * 节流函数
+ * 节流函数 isLocked在执行中时禁止后续相同函数执行
  * @param {function} fn 事件处理函数
- * @param {object} [context=this] 上下文对象
  * @param {boolean} [isImmediate=false] 是否立刻执行
+ * @param {object} [context=this] 上下文对象
  * @returns {Function} 事件处理函数
  */
-export function throttle(fn, context = this, isImmediate = false) {
-  let isLocked;
-  return function () {
-    const _args = arguments
-    
-    if (isLocked) return
-    
-    isLocked = true
-    raFrame(function () {
-      isLocked = false;
-      fn.apply(context, _args)
-    })
-    
-    isImmediate && fn.apply(context, _args)
-  }
+export function throttle(fn, isImmediate = false, context = this) {
+    let isLocked;
+    return function () {
+        const _args = arguments;
+        if (isLocked) return;
+        isLocked = true;
+        raFrame(function () {
+            isLocked = false;
+            fn.apply(context, _args);
+        });
+        isImmediate && fn.apply(context, _args);
+    };
 }
 
 /**
- * 遍历树数据节点，查找符合条件的节点
- * @param {Array|Object} data 数据树，如 {id:1, children:[{id:2}]}
- * @param {Boolean} isFindOne 是否只找最先符合条件的一个
- * @param {Function} fn 查找回调函数，回调参数：item 节点，index节点当前兄弟节点中的索引，data 查找的数据树，函数返回true表示符合条件
- * @param {string} [field=children] 子级字段名称
- * @returns {Array|Object} 查找结果，isFindOne为true时返回Object， false时返回Array
+ * 回显数据字典（字符串数组）
+ * @param {*} datas 数组原始数据
+ * @param {*} value 需要查找的值 多个时按照separator拼接
+ * @param {*} separator 多个值时拼接的标识（默认为 , ）
+ * @param {*} param2 需要对应的 val和key
+ * @returns
  */
-export function traverse(data = [], isFindOne, fn, field = 'children') {
-  let result = []
-  data = Array.isArray(data) ? data : [data]
-  for (let i = 0, len = data.length; i < len; i++) {
-    const item = data[i],
-      checked = fn(item, i, data),
-      children = item[field]
-    if (checked) {
-      result.push(item)
-      if (isFindOne) break
+export function selectDictLabel(datas, value, separator = ',', { dictValue = 'dictValue', dictLabel = 'dictLabel' } = {}) {
+    if (!['', undefined].includes(value)) {
+        var actions = [];
+        var temp = String(value)?.split(separator);
+        Object.keys(String(value)?.split(separator)).some((val) => {
+            Object.keys(datas).some((key) => {
+                if (datas[key][dictValue] == temp[val]) {
+                    actions.push(datas[key][dictLabel]);
+                }
+            });
+        });
+        return actions.join(',');
     }
-    if (children) {
-      const child = traverse(children, isFindOne, fn, field)
-      if (child) result = result.concat(child)
+}
+
+// 添加日期范围
+export function addDateRange(params, dateRange, propName) {
+    let search = clone(params);
+    const str = typeof dateRange === 'string';
+    let startTime, endTime;
+    [startTime = '', endTime = ''] = str ? search[dateRange] : dateRange;
+    if (typeof propName === 'undefined') {
+        search['startTime'] = startTime;
+        search['endTime'] = endTime;
+    } else {
+        search['start' + propName] = startTime;
+        search['end' + propName] = endTime;
     }
-  }
-  return isFindOne ? result[0] || null : result
+    if (str) delete search[dateRange];
+    return search;
 }
 
 /**
- * 查找节点在树结构数组的路径
- * @param {Array|Object} data 树数据数组， 如 {id:1, children:[{id:2}]}
- * @param {Function} fn 查找回调函数，回调参数：item 节点，index节点当前兄弟节点中的索引，data 查找的数据树，函数返回true表示符合条件
- * @param {string} [field=children] 子级字段名称
- * @return {Array} 节点路径数组
+ * 数字转换为文字形式
+ * @param {*} num  表示要转换的值
+ * @returns
  */
-export function findPath(data, fn, field = 'children') {
-  let path = []
-  
-  function find(array, parent) {
-    parent && path.push(parent)
-    for (let i = 0, len = array.length; i < len; i++) {
-      const item = array[i],
-        checked = fn(item, i, array),
-        children = item[field]
-      // 找到，记录路径，退出循环
-      if (checked) {
-        path.push(item)
-        return true
-      }
-      if (children && children.length > 0) {
-        // 在子级找到，退出循环，自己没有，删除记录的父级
-        if (find(children, item)) {
-          return true
-        } else {
-          path.pop()
+export function convertToChinese(num) {
+    var N = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    var str = num.toString();
+    var len = num.toString().length;
+    var C_Num = [];
+    for (var i = 0; i < len; i++) {
+        C_Num.push(N[str.charAt(i)]);
+    }
+    return C_Num.join('');
+}
+/**
+ * 数字转换为文字形式-1
+ * @param {*} number  表示要转换的值
+ * @returns
+ */
+export function numberChinese(number) {
+    var units = '个十百千万@#%亿^&~',
+        chars = '零一二三四五六七八九';
+    var a = (number + '').split(''),
+        s = [];
+    if (a.length > 12) {
+        throw new Error('too big');
+    } else {
+        for (var i = 0, j = a.length - 1; i <= j; i++) {
+            if (j == 1 || j == 5 || j == 9) {
+                //两位数 处理特殊的 1*
+                if (i == 0) {
+                    if (a[i] != '1') s.push(chars.charAt(a[i]));
+                } else {
+                    s.push(chars.charAt(a[i]));
+                }
+            } else {
+                s.push(chars.charAt(a[i]));
+            }
+            if (i != j) {
+                s.push(units.charAt(j - i));
+            }
         }
-      }
     }
-  }
-  
-  find([].concat(data))
-  return path
-  
-}
-
-/**
- * 检测字符串是否url
- * @param {string} str 需要检测的字符串
- * @returns {boolean}
- */
-export function isUrl(str) {
-  return (/^(http|https):\/\/*/.test(str))
-}
-
-/**
- * 检测字符串是否邮箱
- * @param {string} str 需要检测的字符串
- * @returns {boolean}
- */
-export function isEmail(str) {
-  return (/\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/.test(str))
-}
-
-/**
- * 检测字符串是否身份证号码
- * @param {string} str 需要检测的字符串
- * @returns {boolean}
- */
-export function isIdCard(str) {
-  return (/^(^[1-9]\d{7}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}$)|(^[1-9]\d{5}[1-9]\d{3}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])((\d{4})|\d{3}[Xx])$)$/.test(str))
-}
-
-/**
- * 检测字符串是否手机号码
- * @param {string} str 需要检测的字符串
- * @returns {boolean}
- */
-export function isPhoneNumber(str) {
-  return (/^(0|86|17951)?(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$/.test(str))
+    //return s;
+    return s
+        .join('')
+        .replace(/零([十百千万亿@#%^&~])/g, function (m, d, b) {
+            //优先处理 零百 零千 等
+            b = units.indexOf(d);
+            if (b != -1) {
+                if (d == '亿') return d;
+                if (d == '万') return d;
+                if (a[j - b] == '0') return '零';
+            }
+            return '';
+        })
+        .replace(/零+/g, '零')
+        .replace(/零([万亿])/g, function (m, b) {
+            // 零百 零千处理后 可能出现 零零相连的 再处理结尾为零的
+            return b;
+        })
+        .replace(/亿[万千百]/g, '亿')
+        .replace(/[零]$/, '')
+        .replace(/[@#%^&~]/g, function (m) {
+            return { '@': '十', '#': '百', '%': '千', '^': '十', '&': '百', '~': '千' }[m];
+        })
+        .replace(/([亿万])([一-九])/g, function (m, d, b, c) {
+            c = units.indexOf(d);
+            if (c != -1) {
+                if (a[j - c] == '0') return d + '零' + b;
+            }
+            return m;
+        });
 }
 
 /**
@@ -196,8 +199,11 @@ export function isPhoneNumber(str) {
  * @return {string}
  */
 export function guid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  }).toUpperCase();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+        .replace(/[xy]/g, function (c) {
+            const r = (Math.random() * 16) | 0,
+                v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        })
+        .toUpperCase();
 }

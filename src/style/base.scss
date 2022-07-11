@@ -1,158 +1,107 @@
-@import "mixin";
-@import "vars";
+@import 'mixin';
+@import 'vars';
 
-html,
-body {
-  touch-action:manipulation;
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: $--font-family;
-  color: $--color-text-primary;
-  -webkit-text-size-adjust: none;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  font-size: 14px;
-  margin: 0 auto;
-  overflow: hidden;
-  /*手机上写overflow-x:hidden;会有兼容性问题，如果子级如果是绝对定位有运动到屏幕外的话ios7系统会出现留白*/
-  -webkit-overflow-scrolling: touch;
-  /*流畅滚动,ios7下会有滑一下滑不动的情况，所以需要写上*/
-  position: realtive;
-  /*直接子级如果是绝对定位有运动到屏幕外的话，会出现留白*/
-}
-
-/* common */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box
-}
-
-a {
-  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
-  -webkit-user-select: none;
-  -moz-user-focus: none;
-  -moz-user-select: none;
-  color: #b6defd;
-  text-decoration: none;
-}
-
-.app-init {
-  height: 100%;
-}
-
-.fr {
-  float: right;
-}
-
-.fl {
-  float: left;
-}
-
-.tr {
-  text-align: right;
-}
-
-.tl {
-  text-align: left;
-}
-
-.tc {
-  text-align: center;
-}
-
-.inline-block {
-  display: inline-block;
-  position: relative;
-}
-
-.pd {
-  padding: 1rem;
-}
-
-.he {
-  height: 100%;
-}
-
-.pr-1 {
-  padding-right: 1rem;
-}
-
-.pl-1 {
-  padding-left: 1rem;
-}
-
-.pt-1 {
-  padding-top: 1rem;
-}
-
-.pb-1 {
-  padding-bottom: 1rem;
-}
-
-.background {
-  background: #00000029;
-}
-
-.pr-5 {
-  padding-right: 0.5rem;
-}
-
-.pl-5 {
-  padding-left: 0.5rem;
-}
-
-.pt-5 {
-  padding-top: 0.5rem;
-}
-
-.pb-5 {
-  padding-bottom: 0.5rem;
-}
-
-.block {
-  display: block;
-}
-
-.pointer {
-  cursor: pointer;
-}
-
-.inlineBlock {
-  display: block;
-}
+// 常用基本样式
 
 .clearfix {
-  &:after {
-    visibility: hidden;
-    display: block;
-    font-size: 0;
-    content: " ";
-    clear: both;
-    height: 0;
-  }
-}
-
-.ellipsis {
-  -o-text-overflow: ellipsis;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.juzhong {
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-align: center;
-  align-items: center;
-  -ms-flex-pack: center;
-  justify-content: center;
-  overflow: hidden;
+    @include clearfix;
 }
 
 .juzhong_transform {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    position: absolute;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.block {
+    display: block;
+}
+
+.inline {
+    display: inline-block;
+}
+
+.fr {
+    float: right;
+}
+
+.fl {
+    float: left;
+}
+
+/** 文字显示与隐藏 */
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tl {
+    text-align: left;
+}
+
+.tr {
+    text-align: right;
+}
+
+.tc {
+    text-align: center;
+}
+
+.pre {
+    white-space: pre-wrap;
+    font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '\5FAE\8F6F\96C5\9ED1', Arial, sans-serif;
+}
+
+.fw {
+    font-weight: bold;
+}
+// 自适应剩余宽/高
+.f1 {
+    -webkit-box-flex: 1;
+    -webkit-flex-grow: 1;
+    -ms-flex-positive: 1;
+    flex-grow: 1;
+    -webkit-flex-shrink: 1;
+    -ms-flex-negative: 1;
+    flex-shrink: 1;
+}
+// 自身高度不变
+.f0 {
+    -webkit-box-flex: 0;
+    -webkit-flex-grow: 0;
+    -ms-flex-positive: 0;
+    flex-grow: 0;
+    -webkit-flex-shrink: 0;
+    -ms-flex-negative: 0;
+    flex-shrink: 0;
+}
+.overflow-auto {
+    overflow: auto;
+}
+.overflow-hidden {
+    overflow: hidden;
+}
+.overflow-x-auto {
+    overflow-x: auto;
+}
+.overflow-y-auto {
+    overflow-y: auto;
+}
+.overflow-x-hidden {
+    overflow-x: hidden !important;
+}
+.overflow-y-hidden {
+    overflow-y: hidden !important;
+}
+.pull-right {
+    float: right;
+    display: inline;
+}
+.position-relative {
+    position: relative;
 }

@@ -1,31 +1,27 @@
 /**
  * 程序入口
- * @author 
+ * @author
  *
  */
-import { createApp } from 'vue'
+import { createApp } from 'vue';
 
 // 根组件
-import App from './App.vue'
-
-// 按需加载ui
-import ui from './helper/ui'
-
-// 公用组件
-import commonPage from './helper/commonPage'
+import App from './App.vue';
 
 // 初始路由
-import router from './router'
+import router from './router';
 
 // 初始化store
-import store from './store'
+import store from './store';
 
-// 全局混入
-import mixin from './helper/mixin'
+// 引入全局资源
+import plugin from './utils/plugin';
 
-// 解决移动端click时间 300ms 延迟的问题
-import FastClick from 'fastclick'
-FastClick.attach(document.body)
+// ui样式-公用样式
+import './style/index.scss';
 
-createApp(App).use(store).use(router).use(ui).use(commonPage).mixin(mixin).mount('#app')
-
+/**
+ * form表单重置失效问题，必须form表单渲染完成之后修改form的值
+ * ref重名问题，所以规范ref字段必须意ref开头
+ */
+createApp(App).use(store).use(router).use(plugin).mount('#app');

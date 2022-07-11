@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" class="light" id="menu">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+        <link rel="icon" href="/favicon.ico" />
+        <%- injectConfigScript %>
+        <title><%- TITLE %></title>
+        <style type="text/css">
+            html,
+            body {
+                touch-action: manipulation;
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                font-family: var(--van-base-font-family);
+                -webkit-text-size-adjust: none;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                font-size: 14px;
+                margin: 0 auto;
+                overflow: hidden;
+                /*手机上写overflow-x:hidden;会有兼容性问题，如果子级如果是绝对定位有运动到屏幕外的话ios7系统会出现留白*/
+                -webkit-overflow-scrolling: touch;
+                /*流畅滚动,ios7下会有滑一下滑不动的情况，所以需要写上*/
+                position: realtive;
+                /*直接子级如果是绝对定位有运动到屏幕外的话，会出现留白*/
+            }
+
+            #app {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+
+    <body ontouchstart="">
+        <noscript>
+            <strong>We're sorry but vue3 doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+        </noscript>
+        <div id="app"></div>
+    </body>
+    <script type="module" src="/src/main.js"></script>
+</html>

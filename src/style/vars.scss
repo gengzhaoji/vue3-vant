@@ -1,0 +1,71 @@
+@each $i in 0, 2, 4, 5, 10, 14, 15, 20 {
+    .p-t-#{$i} {
+        padding-top: #{$i}px;
+        box-sizing: border-box;
+    }
+
+    .p-r-#{$i} {
+        padding-right: #{$i}px;
+        box-sizing: border-box;
+    }
+
+    .p-b-#{$i} {
+        padding-bottom: #{$i}px;
+        box-sizing: border-box;
+    }
+
+    .p-l-#{$i} {
+        padding-left: #{$i}px;
+        box-sizing: border-box;
+    }
+    .p-#{$i} {
+        padding: #{$i}px !important;
+        box-sizing: border-box;
+    }
+}
+
+@each $i in 0, 4, 5, 6, 8, 10, 15, 20 {
+    .b-r-#{$i} {
+        border-radius: #{$i}px;
+    }
+}
+
+@each $i in 0, 4, 5, 10, 15, 20, 50, 80, 100 {
+    .m-#{$i} {
+        margin: #{$i}px;
+    }
+
+    .m-t-#{$i} {
+        margin-top: #{$i}px;
+    }
+
+    .m-r-#{$i} {
+        margin-right: #{$i}px;
+    }
+
+    .m-b-#{$i} {
+        margin-bottom: #{$i}px;
+    }
+
+    .m-l-#{$i} {
+        margin-left: #{$i}px;
+    }
+}
+
+@each $i in 0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700 {
+    .m-h-#{$i} {
+        min-height: #{$i}px !important;
+    }
+    .m-w-#{$i} {
+        min-width: #{$i}px !important;
+    }
+}
+
+@each $i in 0, 80, 100 {
+    .w#{$i} {
+        width: #{$i + '%'} !important;
+    }
+    .h#{$i} {
+        height: #{$i + '%'} !important;
+    }
+}

@@ -1,0 +1,58 @@
+{
+    //"workbench.editor.enablePreview": false, //打开文件不覆盖
+    "search.followSymlinks": false, //关闭rg.exe进程
+    "editor.minimap.enabled": false, //打开自动保存
+    "editor.lineNumbers": "on", //开启行数提示
+    "editor.wordWrap": "off",
+    "editor.quickSuggestions": {
+        //开启自动显示建议
+        "other": true,
+        "comments": true,
+        "strings": true
+    },
+    "breadcrumbs.enabled": true, // 开启 vscode 文件路径导航
+    "editor.formatOnSave": true, //每次保存自动格式化 开启和eslint 格式化有冲突
+    "editor.tabSize": 2,
+
+    /*  prettier的配置 */
+    "prettier.tabWidth": 4, //制表符符号eslint
+    "prettier.printWidth": 180, // 150 列后换行
+    "prettier.semi": true, //去掉代码结尾的分号
+    "prettier.singleQuote": true, //使用单引号替代双引号
+    "prettier.jsxBracketSameLine": false, // 在jsx中把'>' 是否单独放一行
+
+    "javascript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
+    "javascript.format.insertSpaceBeforeFunctionParenthesis": true, //让函数(名)和后面的括号之间加个空格
+    "vetur.format.defaultFormatter.html": "prettyhtml", //格式化.vue中html
+    "vetur.format.defaultFormatter.js": "vscode-typescript", //让vue中的js按编辑器自带的ts格式进行格式化
+    "vetur.format.defaultFormatterOptions": {
+        "prettier": {
+            "semi": false,
+            "singleQuote": true
+        }
+    },
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "*.svg": "html"
+    },
+    "emmet.includeLanguages": {
+        "wxml": "html"
+    },
+    "minapp-vscode.disableAutoConfig": true,
+    "liveServer.settings.donotShowInfoMsg": true,
+    "liveServer.settings.port": 8020,
+    "[vue]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    }
+}

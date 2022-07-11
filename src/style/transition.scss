@@ -1,0 +1,15 @@
+// 整体项目切换动画
+.fade-transform-enter-active,
+.fade-transform-leave-active {
+    transition: all var(--van-animation-duration-base) ease-in-out;
+}
+
+.fade-transform-enter-from {
+    transform: translateX(-5%);
+    opacity: 0;
+}
+
+.fade-transform-leave-to {
+    transform: translateX(5%);
+    opacity: 0;
+}

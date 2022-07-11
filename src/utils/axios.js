@@ -4,30 +4,44 @@
  *  @module utils/axios
  */
 
-import axios from 'axios'
+import axios from 'axios';
+
+import date from '@u/date';
+
+import qs from 'qs';
+
 // vuex数据
-import store from '@/store'
-import router from '@/router'
-// API_HOST
-import { API_HOST, AJAX_SUCCESS } from '@/config'
-// 弹窗提示
+import user from '@/store/user';
+
+import router from '@/router';
+
+import { compile } from 'path-to-regexp';
+
+import { getHost } from './url';
+
+import { downloadBlob } from '@u/download';
+
+// AJAX_SUCCESS
+import { AJAX_SUCCESS } from '@/config';
+
 import { Toast } from 'vant';
+
+import { nextTick } from 'vue';
 
 // 请求错误自定义
 const errorCode = {
-  '401': '认证失败，无法访问系统资源',
-  '403': '当前操作没有权限',
-  '404': '访问资源不存在',
-  'default': '系统未知错误,请反馈给管理员'
+    401: '认证失败，无法访问系统资源',
+    403: '当前操作没有权限',
+    404: '访问资源不存在',
+    default: '系统未知错误,请反馈给管理员',
 };
 
-// 请求存储
-const axiosPromiseArr = [];
+// 编译过的url缓存 全局loading
+let pathToRegexCaches = {},
+    loadingInstance;
 
-/**
- * 白名单
- */
-const whiteList = ['/file/upload', '/file/downloadFile']
+// 请求存储
+const axiosPromiseArr = new Map();
 
 /**
  * Axios实例化参数选项对象
@@ -37,129 +51,169 @@ const whiteList = ['/file/upload', '/file/downloadFile']
  * @property {number} timeout 超时时间，默认：0， 不限制
  * @property {boolean} withCredentials 是否带上验证信息， 默认：true
  * @property {number} maxContentLength 限制最大发送内容长度，默认：-1 不限制
- * @property {strin} cancelToken 取消请求
+ * @property {strin} baseURL 默认请求拼接的前缀
  */
 const service = axios.create({
-  headers: {
-    'Content-Type': 'application/json;charset=UTF-8'
-  },
-  timeout: 0,
-  withCredentials: false,
-  responseType: 'json',
-  maxContentLength: -1,
-  baseURL: process.env.VUE_APP_BASE_API || API_HOST
-})
+    headers: {
+        'Content-Type': 'application/json;charset=UTF-8',
+        // ie浏览器get请求兼容问题
+        'Cache-Control': 'no-cache',
+        'If-Modified-Since': '0',
+    },
+    timeout: 0,
+    withCredentials: false,
+    responseType: 'json',
+    maxContentLength: -1,
+    baseURL: import.meta.env.VITE_APP_BASE_API,
+});
+
+/**
+ * 判断是否为JSON格式
+ * @param {*} str
+ * @returns
+ */
+function isJSON(str) {
+    if (typeof str == 'string') {
+        try {
+            JSON.parse(str);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+}
+
+/**
+ * 创建缓存key, 由请求url、类型、参数、发送数据构成的标识符
+ * @param {string} url 请求url
+ * @param {string} type 请求类型
+ * @param {object} params url参数对象
+ * @param {object} data 请求数据
+ * @return {string}
+ */
+function createKey(config) {
+    const { url, method, params = '', data = '' } = config;
+    return encodeURIComponent([url, method, isJSON(params) ? params : JSON.stringify(params), isJSON(data) ? data : JSON.stringify(data)].join(','));
+}
 
 /**
  * 在请求发送数据之前，对发送数据进行转换
  */
-service.interceptors.request.use(config => {
-  // 是否需要设置 token
-  const isToken = (config.headers || {}).isToken === false;
-  if (store.getters.token && !isToken) {
-    config.headers['Authorization'] = 'Bearer ' + store.getters.token// 让每个请求携带自定义token 请根据实际情况自行修改
-  }
-  // get请求映射params参数
-  if (config.method === 'get' && config.params) {
-    let url = config.url + '?';
-    for (const propName of Object.keys(config.params)) {
-      const value = config.params[propName];
-      var part = encodeURIComponent(propName) + "=";
-      if (value !== null && typeof (value) !== "undefined") {
-        if (typeof value === 'object') {
-          for (const key of Object.keys(value)) {
-            let params = propName + '[' + key + ']';
-            var subPart = encodeURIComponent(params) + "=";
-            url += subPart + encodeURIComponent(value[key]) + "&";
-          }
-        } else {
-          url += part + encodeURIComponent(value) + "&";
+service.interceptors.request.use(
+    (config) => {
+        // 是否需要设置 token
+        const isToken = (config.headers || {}).isToken === false,
+            { token, une } = user();
+        if (token && !isToken) {
+            config.headers['Authorization'] = 'Bearer ' + token; // 让每个请求携带自定义token
         }
-      }
-    }
-    url = url.slice(0, -1);
-    delete config.params;
-    config.url = url;
-  }
-  /**
- * 请求未完成时保存取消的cancelToken
- */
-  config.cancelToken = new axios.CancelToken(cancel => {
-    // 判断是否重复切不在白名单中
-    const repeat = axiosPromiseArr.some(item => item.url === config.url && item.method === config.method);
-    if (repeat && !whiteList.includes(config.url)) {
-      cancel();
-    } else {
-      axiosPromiseArr.push({ url: config.url, method: config.method, cancel })
-    }
-  })
 
-  return config
-}, error => {
-  Toast.fail('加载超时')
-  return Promise.reject(error);
-})
+        // 创建全局loading，排除不需要loading的接口
+        if (axiosPromiseArr.size === 0 && !['/auth/login', '/auth/logout', '/captcha/image', '/system/user/profile/info', '/home/routers'].includes(config.url)) {
+            loadingInstance = '';
+        }
+
+        // 联合登陆携带une
+        if (une) config.headers['une'] = une;
+
+        /**
+         * 请求未完成时保存取消的cancelToken
+         */
+        config.cancelToken = new axios.CancelToken((cancel) => {
+            // 判断是否重复
+            const key = createKey(config);
+            if (axiosPromiseArr.has(key)) {
+                cancel();
+            } else {
+                axiosPromiseArr.set(key, cancel);
+            }
+        });
+
+        // get请求参数转换
+        if (config.method === 'get') config.paramsSerializer = (params) => qs.stringify(params, { arrayFormat: 'comma' });
+
+        return config;
+    },
+    (error) => {
+        ElMessage.error({ message: '加载超时' });
+        return Promise.reject(error);
+    }
+);
 
 // 响应拦截器
-service.interceptors.response.use(res => {
-  // 请求成功后从正在进行的请求数组中删除
-  axiosPromiseArr.forEach((item, index) => {
-    if (item.url === res.config.url.replace(res.config.baseURL, '') && item.method === res.config.method) {
-      delete axiosPromiseArr[index];
-    }
-  })
-  // 未设置状态码则默认成功状态
-  const code = res.data && res.data.code || AJAX_SUCCESS;
-  // 获取错误信息
-  const msg = errorCode[code] || res.data && res.data.msg || errorCode['default']
-  if (code === 500 && msg === "登录状态已过期") {
-    store.dispatch('LogOut').then(() => {
-      router.push({
-        path: "/login",
-        query: {
-          redirect: store.getters.fullPath
+service.interceptors.response.use(
+    (res) => {
+        // 请求成功后从正在进行的请求数组中删除
+        const key = createKey(res.config);
+        if (axiosPromiseArr.has(key)) axiosPromiseArr.delete(key);
+        // 全部请求结束关闭loading
+        if (axiosPromiseArr.size === 0) {
+            nextTick(() => {
+                loadingInstance?.close();
+            });
         }
-      })
-    })
-    cancelFn();
-  } else if (code === 500) {
-    Toast.fail(msg)
-    return Promise.reject(new Error(msg))
-  } else if (code !== 200) {
-    Toast.fail(msg)
-    return Promise.reject('error')
-  } else {
-    return Promise.resolve(res.data)
-  }
-},
-  // 服务器状态码不是200的情况    
-  error => {
-    let { message } = error;
-    if (message) {
-      if (message == "Network Error") {
-        message = "后端接口连接异常";
-      } else if (message.includes("timeout")) {
-        message = "系统接口请求超时";
-      } else if (message.includes("Request failed with status code")) {
-        message = "系统接口" + message.substr(message.length - 3) + "异常";
-      }
-      Toast.fail(message)
-      cancelFn();
+        // 未设置状态码则默认成功状态
+        const code = (res.data && res.data.code) || AJAX_SUCCESS;
+
+        // 获取错误信息
+        const msg = errorCode[code] || (res.data && res.data.msg) || errorCode['default'];
+
+        if ([401, 418].includes(code)) {
+            cancelFn();
+            if (code === 418) {
+                user().LogOutSET();
+                router.replace('/login');
+                Toast.fail(msg);
+            }
+            if (code === 401) {
+                user()
+                    .LogOut()
+                    .then(() => {
+                        router.replace({
+                            path: '/login',
+                            query: {
+                                redirect: router.currentRoute.fullPath,
+                            },
+                        });
+                    });
+                Toast.fail(msg);
+            }
+        } else if (code !== 200) {
+            Toast.fail(msg);
+            return Promise.reject(res.data);
+        } else {
+            return Promise.resolve(res.data);
+        }
+    },
+    // 服务器状态码不是200的情况
+    (error) => {
+        let { message } = error;
+        if (message) {
+            if (message == 'Network Error') {
+                message = '后端接口连接异常';
+            } else if (message.includes('timeout')) {
+                message = '系统接口请求超时';
+            } else if (message.includes('Request failed with status code')) {
+                message = '系统接口' + message.substr(message.length - 3) + '异常';
+            }
+            Toast.fail(message);
+            cancelFn();
+        }
+        return Promise.reject(error);
     }
-    return Promise.reject(error)
-  }
 );
+
 /**
  * 请求系统错误时 取消所有正在进行的请求函数
- * @returns 
+ * @returns
  */
 export function cancelFn() {
-  axiosPromiseArr.forEach((el, index) => {
-    // 中止请求
-    el.cancel();
-    // 重置axiosPromiseArr
-    delete axiosPromiseArr[index];
-  })
+    for (let cancel of axiosPromiseArr.values()) {
+        cancel();
+    }
+    axiosPromiseArr.clear();
+    // 关闭全局loading
+    loadingInstance?.close();
 }
 
 /**
@@ -191,32 +245,55 @@ export function cancelFn() {
  */
 
 /**
-* 
-* @param {object} options 
-* 请求配置参数
-* url请求地址必须传
-* method请求方法默认为get方法
-* data请求参数
-*/
+ *
+ * @param {object} options
+ * 请求配置参数
+ * url请求地址必须传
+ * method请求方法默认为get方法
+ * data请求参数
+ */
 export default function (options) {
-  // 处理默认参数，传参和默认参数合并
-  let config = Object.assign({ method: 'get' }, options || {});
+    // 处理默认参数，传参和默认参数合并
+    let config = Object.assign({ method: 'get' }, options || {});
 
-  // 必须要传入url
-  if (!config.url) {
-    throw new Error('ajax url is required!')
-  }
+    // 必须要传入url
+    if (!config.url) {
+        throw new Error('ajax url is required!');
+    }
 
-  let { url, method, data } = config;
+    let { url, method, data } = config;
+    // page接口默认添加needCount：1，需要总数
+    if (config.url.split('/').pop() === 'page') {
+        data = Object.assign({ needCount: 1 }, data || {});
+    }
+    // export接口默认responseType = 'blob'
+    if (config.url.split('/').pop() === 'export') {
+        config.responseType = 'blob';
+    }
 
-  delete config.url;
-  delete config.method;
-  delete config.data;
+    // 从缓存中提取已经解析过的url
+    // url 支持参数信息，如： /api/path/:id
+    // 这种情况需要把url解析成一个正则表达式，然后再跟参数匹配组成一个真正要请求的url
+    let compileCache = pathToRegexCaches[url];
+    let host = getHost(url);
+    if (!compileCache) {
+        // 先排除host段，因为host段的端口号与参数写法有冲突
+        compileCache = pathToRegexCaches[url] = compile(url.replace(host, ''), {});
+    }
+    // 出去传输过来的url参数，并补回host段
+    url = host + compileCache(config.params);
 
-  const http = ['get', 'head', 'delete'].includes(method) ? service[method](url, {
-    ...config,
-    params: data
-  }) : service[method](url, data, config);
+    delete config.url;
+    delete config.method;
+    delete config.data;
+    delete config.params;
 
-  return http
+    const http = ['get', 'head', 'delete'].includes(method)
+        ? service[method](url, {
+              ...config,
+              params: data,
+          })
+        : service[method](url, data, config);
+
+    return http;
 }
