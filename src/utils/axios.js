@@ -110,7 +110,11 @@ service.interceptors.request.use(
 
         // 创建全局loading，排除不需要loading的接口
         if (axiosPromiseArr.size === 0 && !['/auth/login', '/auth/logout', '/captcha/image', '/system/user/profile/info', '/home/routers'].includes(config.url)) {
-            loadingInstance = '';
+            loadingInstance = Toast.loading({
+                message: '加载中...',
+                forbidClick: true,
+                duration: 0,
+            });
         }
 
         // 联合登陆携带une
@@ -149,7 +153,7 @@ service.interceptors.response.use(
         // 全部请求结束关闭loading
         if (axiosPromiseArr.size === 0) {
             nextTick(() => {
-                loadingInstance?.close();
+                loadingInstance?.clear();
             });
         }
         // 未设置状态码则默认成功状态
@@ -213,7 +217,7 @@ export function cancelFn() {
     }
     axiosPromiseArr.clear();
     // 关闭全局loading
-    loadingInstance?.close();
+    loadingInstance?.clear();
 }
 
 /**
